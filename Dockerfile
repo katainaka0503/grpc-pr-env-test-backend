@@ -1,4 +1,4 @@
-FROM golang:1.16-buster AS build
+FROM golang:1.18-buster AS build
 
 WORKDIR /app
 
@@ -6,18 +6,15 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-COPY *.go ./
+COPY . .
 
-RUN go build ./greeter_backend/main.go
+RUN go build -o grpc-pr-env-test-backend
 
-##
-## Deploy
-##
 FROM gcr.io/distroless/base-debian10
 
 WORKDIR /
 
-COPY --from=build /main /greeter_backend
+COPY --from=build /app/grpc-pr-env-test-backend /grpc-pr-env-test-backend
 
 EXPOSE 50051
 
