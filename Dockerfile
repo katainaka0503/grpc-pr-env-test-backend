@@ -20,4 +20,4 @@ EXPOSE 50051
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/greeter_backend"]
+CMD ["/grpc-pr-env-test-backend"]
