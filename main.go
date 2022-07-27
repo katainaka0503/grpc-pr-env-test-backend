@@ -28,6 +28,7 @@ import (
 
 	pb "github.com/katainaka0503/grpc-pr-env-test-backend/helloworld"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/baggage"
 	"google.golang.org/grpc"
 )
 
@@ -43,6 +44,10 @@ type server struct {
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	log.Printf("Received: %v", in.GetName())
+
+	baggage := baggage.FromContext(ctx)
+	log.Printf("Baggage: %v", baggage.Members())
+
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
