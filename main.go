@@ -48,7 +48,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	baggage := baggage.FromContext(ctx)
 	log.Printf("Baggage: %v", baggage.Members())
 
-	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
+	return &pb.HelloReply{Message: "Hi " + in.GetName()}, nil
 }
 
 func main() {
