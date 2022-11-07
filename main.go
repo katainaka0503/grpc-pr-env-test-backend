@@ -49,7 +49,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	md, _ := metadata.FromIncomingContext(ctx)
 	log.Printf("MetaData: %v", md)
 
-	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
+	return &pb.HelloReply{Message: "Yo " + in.GetName()}, nil
 }
 
 func main() {
