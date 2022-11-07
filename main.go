@@ -30,6 +30,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/baggage"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -44,6 +45,9 @@ type server struct {
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	log.Printf("Received: %v", in.GetName())
+
+	md, _ := metadata.FromIncomingContext(ctx)
+	log.Printf("MetaData: %v", md)
 
 	baggage := baggage.FromContext(ctx)
 	log.Printf("Baggage: %v", baggage.Members())
