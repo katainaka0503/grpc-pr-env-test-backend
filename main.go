@@ -27,12 +27,10 @@ import (
 	"net"
 
 	pb "github.com/katainaka0503/grpc-pr-env-test-backend/helloworld"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 var (
@@ -51,22 +49,22 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	md, _ := metadata.FromIncomingContext(ctx)
 	log.Printf("MetaData: %v", md)
 
-	baggage := baggage.FromContext(ctx)
-	log.Printf("Baggage: %v", baggage.Members())
-
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
 func main() {
 	flag.Parse()
+
+	tracer.Start()
+	defer tracer.Stop()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	otel.SetTextMapPropagator(propagation.Baggage{})
-	s := grpc.NewServer(grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()))
+	s := grpc.NewServer(grpc.UnaryInterceptor(grpctrace.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(grpctrace.StreamServerInterceptor()))
 	pb.RegisterGreeterServer(s, &server{})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
