@@ -55,7 +55,7 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 
 	log.Printf("Received: %v", in.GetName())
 
-	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
+	return &pb.HelloReply{Message: "Hi " + in.GetName()}, nil
 }
 
 func main() {
