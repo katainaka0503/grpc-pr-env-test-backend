@@ -27,9 +27,9 @@ import (
 	"net"
 
 	pb "github.com/katainaka0503/grpc-pr-env-test-backend/helloworld"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/baggage"
 	"google.golang.org/grpc"
+	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 var (
@@ -43,22 +43,34 @@ type server struct {
 
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Printf("Received: %v", in.GetName())
+	span, ok := tracer.SpanFromContext(ctx)
+	if !ok {
+		log.Printf("failed to fetch span")
+	}
 
-	baggage := baggage.FromContext(ctx)
-	log.Printf("Baggage: %v", baggage.Members())
+	span.Context().ForeachBaggageItem(func(k string, v string) bool {
+		log.Printf("MetaData: %v: %v\n", k, v)
+		return true
+	})
+
+	log.Printf("Received: %v", in.GetName())
 
 	return &pb.HelloReply{Message: "Hi " + in.GetName()}, nil
 }
 
 func main() {
 	flag.Parse()
+
+	tracer.Start()
+	defer tracer.Stop()
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer(grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()))
+
+	s := grpc.NewServer(grpc.UnaryInterceptor(grpctrace.UnaryServerInterceptor()),
+		grpc.StreamInterceptor(grpctrace.StreamServerInterceptor()))
 	pb.RegisterGreeterServer(s, &server{})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
