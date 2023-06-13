@@ -28,7 +28,6 @@ import (
 
 	pb "github.com/katainaka0503/grpc-pr-env-test-backend/helloworld"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	grpctrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/google.golang.org/grpc"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
@@ -44,10 +43,17 @@ type server struct {
 
 // SayHello implements helloworld.GreeterServer
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Printf("Received: %v", in.GetName())
+	span, ok := tracer.SpanFromContext(ctx)
+	if !ok {
+		log.Printf("failed to fetch span")
+	}
 
-	md, _ := metadata.FromIncomingContext(ctx)
-	log.Printf("MetaData: %v", md)
+	span.Context().ForeachBaggageItem(func(k string, v string) bool {
+		log.Printf("MetaData: %v: %v\n", k, v)
+		return true
+	})
+
+	log.Printf("Received: %v", in.GetName())
 
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
